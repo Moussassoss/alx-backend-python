@@ -10,14 +10,14 @@ def stream_users_in_batches(batch_size):
         rows = cursor.fetchall()
         if not rows:
             break
-        yield rows   # ✅ generator
+        yield rows   # generator yields a batch
         offset += batch_size
     cursor.close()
     connection.close()
 
 def batch_processing(batch_size):
-    """Generator that yields processed users over age 25"""
+    """Generator that yields each user over age 25"""
     for batch in stream_users_in_batches(batch_size):
         for user in batch:
             if user['age'] > 25:
-                yield user  
+                yield user
