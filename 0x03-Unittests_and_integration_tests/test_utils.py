@@ -5,6 +5,7 @@ from parameterized import parameterized
 from unittest.mock import patch, Mock
 from utils import access_nested_map, get_json, memoize
 
+
 class TestAccessNestedMap(unittest.TestCase):
     """Tests for the access_nested_map function"""
 
@@ -55,17 +56,21 @@ class TestMemoize(unittest.TestCase):
         """Test that a_method is called only once due to memoization"""
 
         class TestClass:
+            """Test class with a method and a memoized property"""
+
             def a_method(self):
+                """Simple method returning 42"""
                 return 42
 
             @memoize
             def a_property(self):
+                """Memoized property returning a_method result"""
                 return self.a_method()
 
         with patch.object(
-                TestClass,
-                "a_method",
-                return_value=42
+            TestClass,
+            "a_method",
+            return_value=42
         ) as mock_a_method:
             instance = TestClass()
             self.assertEqual(instance.a_property, 42)
