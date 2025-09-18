@@ -87,12 +87,15 @@ class TestGithubOrgClient(unittest.TestCase):
         "apache2_repos": apache2_repos
     }
 ])
+
+
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """Integration tests for GithubOrgClient.public_repos"""
 
     @classmethod
     def setUpClass(cls):
         """Set up mock for requests.get for the entire class"""
+        # Patch requests.get at class level
         cls.get_patcher = patch("client.requests.get")
         cls.mock_get = cls.get_patcher.start()
 
