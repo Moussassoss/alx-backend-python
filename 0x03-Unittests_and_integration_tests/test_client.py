@@ -79,36 +79,34 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
-@parameterized_class([
-    {
-        "org_payload": TEST_PAYLOAD[0][0],
-        "repos_payload": TEST_PAYLOAD[0][1],
-        "expected_repos": TEST_PAYLOAD[0][2],
-        "apache2_repos": TEST_PAYLOAD[0][3],
-    }
-])
+@parameterized_class([{
+    "org_payload": TEST_PAYLOAD[0][0],
+    "repos_payload": TEST_PAYLOAD[0][1],
+    "expected_repos": TEST_PAYLOAD[0][2],
+    "apache2_repos": TEST_PAYLOAD[0][3],
+}])
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """Integration tests for GithubOrgClient.public_repos"""
 
     @classmethod
     def setUpClass(cls):
-        """Set up mock for requests.get for the entire class"""
-        # Create a simple mock function
-        def mock_get(url, *args, **kwargs):
-            mock_response = Mock()
-            if url == "https://api.github.com/orgs/google":
-                mock_response.json.return_value = cls.org_payload
-            elif url == "https://api.github.com/orgs/google/repos":
-                mock_response.json.return_value = cls.repos_payload
-            return mock_response
+        """Patch client.get_json so no real HTTP requests happen"""
+        cls.get_patcher = patch("client.get_json")
+        cls.mock_get_json = cls.get_patcher.start()
 
-        # Patch requests.get directly
-        cls.get_patcher = patch('requests.get', side_effect=mock_get)
-        cls.get_patcher.start()
+        # return different payloads based on the URL passed
+        def side_effect(url):
+            if url == "https://api.github.com/orgs/google":
+                return cls.org_payload
+            elif url == "https://api.github.com/orgs/google/repos":
+                return cls.repos_payload
+            return None
+
+        cls.mock_get_json.side_effect = side_effect
 
     @classmethod
     def tearDownClass(cls):
-        """Stop patcher after all tests"""
+        """Stop patch after all tests"""
         cls.get_patcher.stop()
 
     def test_public_repos(self):
