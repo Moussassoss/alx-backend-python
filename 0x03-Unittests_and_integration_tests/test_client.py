@@ -93,18 +93,17 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up mock for requests.get for the entire class"""
-        # Create separate mock responses
-        cls.mock_org_response = Mock()
-        cls.mock_org_response.json.return_value = cls.org_payload
-        
-        cls.mock_repos_response = Mock()
-        cls.mock_repos_response.json.return_value = cls.repos_payload
-        
-        # Create a mock that returns responses in order
-        cls.mock_get = Mock(side_effect=[cls.mock_org_response, cls.mock_repos_response])
-        
-        # Patch requests.get
-        cls.get_patcher = patch('client.requests.get', cls.mock_get)
+        # Create a simple mock function
+        def mock_get(url, *args, **kwargs):
+            mock_response = Mock()
+            if url == "https://api.github.com/orgs/google":
+                mock_response.json.return_value = cls.org_payload
+            elif url == "https://api.github.com/orgs/google/repos":
+                mock_response.json.return_value = cls.repos_payload
+            return mock_response
+
+        # Patch requests.get directly
+        cls.get_patcher = patch('requests.get', side_effect=mock_get)
         cls.get_patcher.start()
 
     @classmethod
