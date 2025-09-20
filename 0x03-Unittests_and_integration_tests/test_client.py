@@ -88,24 +88,26 @@ class TestGithubOrgClient(unittest.TestCase):
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """Integration tests for GithubOrgClient.public_repos"""
 
-    def setUp(self):
-        """Set up mock for requests.get for each test"""
-        self.get_patcher = patch("client.requests.get")
-        self.mock_get = self.get_patcher.start()
+    @classmethod
+    def setUpClass(cls):
+        """Set up mock for requests.get for the entire class"""
+        cls.get_patcher = patch("client.requests.get")
+        cls.mock_get = cls.get_patcher.start()
 
         def get_side_effect(url, *args, **kwargs):
             mock_response = Mock()
             if url.endswith("/repos"):
-                mock_response.json.return_value = self.repos_payload
+                mock_response.json.return_value = cls.repos_payload
             else:
-                mock_response.json.return_value = self.org_payload
+                mock_response.json.return_value = cls.org_payload
             return mock_response
 
-        self.mock_get.side_effect = get_side_effect
+        cls.mock_get.side_effect = get_side_effect
 
-    def tearDown(self):
-        """Stop patcher after each test"""
-        self.get_patcher.stop()
+    @classmethod
+    def tearDownClass(cls):
+        """Stop patcher after all tests"""
+        cls.get_patcher.stop()
 
     def test_public_repos(self):
         """Test public_repos returns expected repo names"""
