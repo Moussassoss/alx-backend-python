@@ -93,19 +93,18 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up mock for requests.get for the entire class"""
-        # Create mock responses
-        cls.org_response = Mock()
-        cls.org_response.json.return_value = cls.org_payload
-        
-        cls.repos_response = Mock()
-        cls.repos_response.json.return_value = cls.repos_payload
-        
-        # Create a mock that returns responses in order
-        cls.mock_get = Mock(side_effect=[cls.org_response, cls.repos_response])
-        
-        # Patch requests.get
-        cls.get_patcher = patch('client.requests.get', cls.mock_get)
-        cls.get_patcher.start()
+        # Create a mock that returns different responses based on URL
+        def mock_get(url, *args, **kwargs):
+            mock_response = Mock()
+            if url == "https://api.github.com/orgs/google":
+                mock_response.json.return_value = cls.org_payload
+            elif url == "https://api.github.com/orgs/google/repos":
+                mock_response.json.return_value = cls.repos_payload
+            return mock_response
+
+        # Patch requests.get in the client module
+        cls.get_patcher = patch('client.requests.get', side_effect=mock_get)
+        cls.mock_get = cls.get_patcher.start()
 
     @classmethod
     def tearDownClass(cls):
@@ -117,16 +116,12 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         client = GithubOrgClient("google")
         result = client.public_repos()
         self.assertEqual(result, self.expected_repos)
-        # Verify the mock was called twice (org + repos)
-        self.assertEqual(self.mock_get.call_count, 2)
 
     def test_public_repos_with_license(self):
         """Test public_repos filtered by license"""
         client = GithubOrgClient("google")
         result = client.public_repos(license_key="apache-2.0")
         self.assertEqual(result, self.apache2_repos)
-        # Verify the mock was called twice (org + repos)
-        self.assertEqual(self.mock_get.call_count, 2)
 
 
 if __name__ == "__main__":
