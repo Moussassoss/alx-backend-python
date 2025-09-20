@@ -93,25 +93,18 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up mock for requests.get for the entire class"""
-        # Create mock responses
-        mock_responses = []
-        
-        # Org response
-        org_response = Mock()
-        org_response.json.return_value = cls.org_payload
-        mock_responses.append(org_response)
-        
-        # Repos response
-        repos_response = Mock()
-        repos_response.json.return_value = cls.repos_payload
-        mock_responses.append(repos_response)
-        
-        # Create mock get that returns our responses in order
-        mock_get = Mock(side_effect=mock_responses)
-        
-        # Patch requests.get
-        cls.get_patcher = patch('client.requests.get', new=mock_get)
-        cls.get_patcher.start()
+        # Create a simple mock function that returns appropriate responses
+        def mock_requests_get(url, *args, **kwargs):
+            mock_response = Mock()
+            if "orgs/google" in url and "/repos" not in url:
+                mock_response.json.return_value = cls.org_payload
+            elif "orgs/google/repos" in url:
+                mock_response.json.return_value = cls.repos_payload
+            return mock_response
+
+        # Patch requests.get directly - this is the key change
+        cls.get_patcher = patch('requests.get', side_effect=mock_requests_get)
+        cls.mock_get = cls.get_patcher.start()
 
     @classmethod
     def tearDownClass(cls):
