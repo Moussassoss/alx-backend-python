@@ -93,27 +93,21 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up mock for requests.get for the entire class"""
-        # Create a mock that returns different responses based on URL
-        def json_side_effect():
-            # This will be called multiple times, so we need to track calls
-            if not hasattr(cls, '_call_count'):
-                cls._call_count = 0
-            
-            cls._call_count += 1
-            
-            # First call: org payload
-            if cls._call_count == 1:
-                return cls.org_payload
-            # Subsequent calls: repos payload
-            else:
-                return cls.repos_payload
-
-        # Create a mock response
-        mock_response = Mock()
-        mock_response.json.side_effect = json_side_effect
+        # Create mock responses
+        mock_responses = []
         
-        # Create a mock for requests.get that returns our mock response
-        mock_get = Mock(return_value=mock_response)
+        # Org response
+        org_response = Mock()
+        org_response.json.return_value = cls.org_payload
+        mock_responses.append(org_response)
+        
+        # Repos response
+        repos_response = Mock()
+        repos_response.json.return_value = cls.repos_payload
+        mock_responses.append(repos_response)
+        
+        # Create mock get that returns our responses in order
+        mock_get = Mock(side_effect=mock_responses)
         
         # Patch requests.get
         cls.get_patcher = patch('client.requests.get', new=mock_get)
