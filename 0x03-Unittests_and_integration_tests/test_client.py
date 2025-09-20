@@ -93,22 +93,18 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up mock for requests.get for the entire class"""
-        # Patch requests.get directly instead of using a patcher object
-        cls.get_patcher = patch('client.requests.get')
+        # Create config dictionary for the patcher
+        config = {'return_value.json.side_effect': [
+            cls.org_payload,
+            cls.repos_payload,
+            cls.repos_payload,
+        ]}
+        
+        # Patch requests.get with the correct configuration
+        cls.get_patcher = patch('client.requests.get', **config)
+        
+        # Start the patcher and store the mock
         cls.mock_get = cls.get_patcher.start()
-
-        def side_effect(url, *args, **kwargs):
-            mock_response = Mock()
-            mock_response.json.return_value = {}
-            
-            if "orgs/google" in url and "/repos" not in url:
-                mock_response.json.return_value = cls.org_payload
-            elif "orgs/google/repos" in url:
-                mock_response.json.return_value = cls.repos_payload
-            
-            return mock_response
-
-        cls.mock_get.side_effect = side_effect
 
     @classmethod
     def tearDownClass(cls):
