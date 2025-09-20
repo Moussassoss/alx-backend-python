@@ -79,30 +79,36 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
-@parameterized_class([{
-    "org_payload": org_payload,
-    "repos_payload": repos_payload,
-    "expected_repos": expected_repos,
-    "apache2_repos": apache2_repos
-}])
+@parameterized_class([
+    {
+        "org_payload": org_payload,
+        "repos_payload": repos_payload,
+        "expected_repos": expected_repos,
+        "apache2_repos": apache2_repos
+    }
+])
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """Integration tests for GithubOrgClient.public_repos"""
 
     @classmethod
     def setUpClass(cls):
         """Set up mock for requests.get for the entire class"""
-        cls.get_patcher = patch("client.requests.get")
+        # Patch requests.get directly instead of using a patcher object
+        cls.get_patcher = patch('client.requests.get')
         cls.mock_get = cls.get_patcher.start()
 
-        def get_side_effect(url, *args, **kwargs):
+        def side_effect(url, *args, **kwargs):
             mock_response = Mock()
-            if url.endswith("/repos"):
-                mock_response.json.return_value = cls.repos_payload
-            else:
+            mock_response.json.return_value = {}
+            
+            if "orgs/google" in url and "/repos" not in url:
                 mock_response.json.return_value = cls.org_payload
+            elif "orgs/google/repos" in url:
+                mock_response.json.return_value = cls.repos_payload
+            
             return mock_response
 
-        cls.mock_get.side_effect = get_side_effect
+        cls.mock_get.side_effect = side_effect
 
     @classmethod
     def tearDownClass(cls):
