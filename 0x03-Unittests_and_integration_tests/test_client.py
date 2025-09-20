@@ -20,7 +20,7 @@ class TestGithubOrgClient(unittest.TestCase):
         mock_get_json.return_value = {"login": org_name}
 
         client = GithubOrgClient(org_name)
-        result = client.org  # access property
+        result = client.org
 
         mock_get_json.assert_called_once_with(
             f"https://api.github.com/orgs/{org_name}"
@@ -77,8 +77,7 @@ class TestGithubOrgClient(unittest.TestCase):
         client = GithubOrgClient("google")
         result = client.has_license(repo, license_key)
         self.assertEqual(result, expected)
-
-
+        
 @parameterized_class([
     {
         "org_payload": org_payload,
