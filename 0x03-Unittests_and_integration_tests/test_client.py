@@ -79,18 +79,21 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
-@parameterized_class([{
-    "org_payload": TEST_PAYLOAD[0][0],
-    "repos_payload": TEST_PAYLOAD[0][1],
-    "expected_repos": TEST_PAYLOAD[0][2],
-    "apache2_repos": TEST_PAYLOAD[0][3],
-}])
+@parameterized_class([
+    {
+        "org_payload": TEST_PAYLOAD[0][0],
+        "repos_payload": TEST_PAYLOAD[0][1],
+        "expected_repos": TEST_PAYLOAD[0][2],
+        "apache2_repos": TEST_PAYLOAD[0][3],
+    }
+])
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """Integration tests for GithubOrgClient.public_repos"""
 
     @classmethod
     def setUpClass(cls):
         """Set up mock for requests.get for the entire class"""
+        # Create a simple mock function that returns appropriate responses
         def mock_requests_get(url, *args, **kwargs):
             mock_response = Mock()
             if "orgs/google" in url and "/repos" not in url:
@@ -99,8 +102,9 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
                 mock_response.json.return_value = cls.repos_payload
             return mock_response
 
+        # Patch requests.get directly
         cls.get_patcher = patch('requests.get', side_effect=mock_requests_get)
-        cls.mock_get = cls.get_patcher.start()
+        cls.get_patcher.start()
 
     @classmethod
     def tearDownClass(cls):
