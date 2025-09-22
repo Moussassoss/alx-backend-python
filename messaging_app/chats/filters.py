@@ -1,12 +1,13 @@
 import django_filters
-from .models import Message, Conversation
-from django.utils import timezone
+from .models import Message
 
 class MessageFilter(django_filters.FilterSet):
-    start_date = django_filters.DateTimeFilter(field_name="sent_at", lookup_expr='gte')
-    end_date = django_filters.DateTimeFilter(field_name="sent_at", lookup_expr='lte')
-    sender = django_filters.CharFilter(field_name='sender__user_id')
+    # Filter messages by sender, conversation, and sent_at range
+    sender = django_filters.NumberFilter(field_name='sender__id')
+    conversation = django_filters.NumberFilter(field_name='conversation__id')
+    sent_after = django_filters.DateTimeFilter(field_name='sent_at', lookup_expr='gte')
+    sent_before = django_filters.DateTimeFilter(field_name='sent_at', lookup_expr='lte')
 
     class Meta:
         model = Message
-        fields = ['sender', 'start_date', 'end_date']
+        fields = ['sender', 'conversation', 'sent_after', 'sent_before']
