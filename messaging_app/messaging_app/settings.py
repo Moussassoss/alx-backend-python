@@ -131,12 +131,24 @@ AUTH_USER_MODEL = 'chats.User'
 
 # Django REST framework settings (optional, but good practice)
 REST_FRAMEWORK = {
+    # Global permissions
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+
+    # Authentication: add JWT
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT
+        'rest_framework.authentication.SessionAuthentication',        # optional
+        'rest_framework.authentication.BasicAuthentication',          # optional
     ],
+
+    # Pagination
+    'DEFAULT_PAGINATION_CLASS': 'chats.pagination.MessagePagination',  # custom pagination class
+    'PAGE_SIZE': 20,
+
+    # Filtering
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }
+
 
