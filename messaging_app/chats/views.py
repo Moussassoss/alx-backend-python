@@ -1,20 +1,14 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from .permissions import IsParticipantOfConversation
 
 class ConversationViewSet(viewsets.ModelViewSet):
-    ...
-    permission_classes = [IsParticipantOfConversation]
-
-class MessageViewSet(viewsets.ModelViewSet):
-    ...
-    permission_classes = [IsParticipantOfConversation]
-
-class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all().order_by('-created_at')
     serializer_class = ConversationSerializer
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['created_at']
 
@@ -32,8 +26,14 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 
 class MessageViewSet(viewsets.ModelViewSet):
-    queryset = Message.objects.all().order_by('sent_at')
     serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['sent_at']
+
+    def get_queryset(self):
+        # Only messages in conversations the user participates in
+        return Message.objects.filter(conversation__participants=self.request.user).order_by('sent_at')
 
     def create(self, request, *args, **kwargs):
         conversation_id = request.data.get('conversation')
@@ -53,3 +53,10 @@ class MessageViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, *args, **kwargs):
+        message = self.get_object()
+        # check permissions
+        self.check_object_permissions(request, message)
+        message.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
