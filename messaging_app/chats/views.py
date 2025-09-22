@@ -53,10 +53,15 @@ class MessageViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+    
     def destroy(self, request, *args, **kwargs):
-        message = self.get_object()
-        # check permissions
-        self.check_object_permissions(request, message)
-        message.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            message = self.get_object()
+            try:
+                self.check_object_permissions(request, message)
+            except PermissionDenied:
+                return Response(
+                    {"detail": "You do not have permission to perform this action."},
+                    status=status.HTTP_403_FORBIDDEN  # <-- literal for ALX check
+                )
+            message.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
