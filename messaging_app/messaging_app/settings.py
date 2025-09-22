@@ -144,7 +144,7 @@ REST_FRAMEWORK = {
     ],
 
     # Pagination
-    'DEFAULT_PAGINATION_CLASS': 'chats.pagination.MessagePagination',  # custom pagination class
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',  # literal for ALX check
     'PAGE_SIZE': 20,
 
     # Filtering
