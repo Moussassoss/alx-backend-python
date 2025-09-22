@@ -2,6 +2,15 @@ from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
+from .permissions import IsParticipantOfConversation
+
+class ConversationViewSet(viewsets.ModelViewSet):
+    ...
+    permission_classes = [IsParticipantOfConversation]
+
+class MessageViewSet(viewsets.ModelViewSet):
+    ...
+    permission_classes = [IsParticipantOfConversation]
 
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all().order_by('-created_at')
