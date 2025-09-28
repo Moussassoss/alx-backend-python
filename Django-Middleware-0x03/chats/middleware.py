@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from django.http import HttpResponseForbidden JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse
 from time import time
 from collections import defaultdict, deque
 
@@ -40,7 +40,7 @@ class RestrictAccessByTimeMiddleware:
         response = self.get_response(request)
         return response
 
-class MessageRateLimitMiddleware:
+class OffensiveLanguageMiddleware:
     """
     Middleware to limit the number of messages a user can send within a time window.
     Example: max 5 messages per minute per IP.
@@ -49,11 +49,10 @@ class MessageRateLimitMiddleware:
         self.get_response = get_response
         self.max_messages = max_messages
         self.window_seconds = window_seconds
-        # Stores {ip_address: deque([timestamps])}
         self.ip_message_times = defaultdict(deque)
 
     def __call__(self, request):
-        # Only limit POST requests (sending messages)
+        # Only limit POST requests to messages
         if request.method == "POST" and request.path.startswith("/api/messages/"):
             ip = self.get_client_ip(request)
             now = time()
@@ -77,11 +76,11 @@ class MessageRateLimitMiddleware:
 
     @staticmethod
     def get_client_ip(request):
-        """Get the real client IP address from request headers."""
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
             ip = x_forwarded_for.split(",")[0].strip()
         else:
             ip = request.META.get("REMOTE_ADDR")
         return ip
+
 
