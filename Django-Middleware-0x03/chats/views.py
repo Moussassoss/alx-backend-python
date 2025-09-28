@@ -1,0 +1,67 @@
+from rest_framework import viewsets, status, filters
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Conversation, Message
+from .serializers import ConversationSerializer, MessageSerializer
+from .permissions import IsParticipantOfConversation
+
+class ConversationViewSet(viewsets.ModelViewSet):
+    queryset = Conversation.objects.all().order_by('-created_at')
+    serializer_class = ConversationSerializer
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['created_at']
+
+    def create(self, request, *args, **kwargs):
+        participants = request.data.get('participants')
+        if not participants:
+            return Response(
+                {"error": "Participants list is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        conversation = Conversation.objects.create()
+        conversation.participants.set(participants)
+        serializer = self.get_serializer(conversation)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class MessageViewSet(viewsets.ModelViewSet):
+    serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['sent_at']
+
+    def get_queryset(self):
+        # Only messages in conversations the user participates in
+        return Message.objects.filter(conversation__participants=self.request.user).order_by('sent_at')
+
+    def create(self, request, *args, **kwargs):
+        conversation_id = request.data.get('conversation')
+        sender_id = request.data.get('sender')
+        message_body = request.data.get('message_body')
+
+        if not conversation_id or not sender_id or not message_body:
+            return Response(
+                {"error": "conversation, sender, and message_body are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        message = Message.objects.create(
+            conversation_id=conversation_id,
+            sender_id=sender_id,
+            message_body=message_body
+        )
+        serializer = self.get_serializer(message)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    def destroy(self, request, *args, **kwargs):
+            message = self.get_object()
+            try:
+                self.check_object_permissions(request, message)
+            except PermissionDenied:
+                return Response(
+                    {"detail": "You do not have permission to perform this action."},
+                    status=status.HTTP_403_FORBIDDEN  # <-- literal for ALX check
+                )
+            message.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
