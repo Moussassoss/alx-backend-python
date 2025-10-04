@@ -63,6 +63,7 @@ def inbox(request):
 def unread_inbox(request):
     """
     Show only unread messages for the logged-in user.
+    Optimized with .only().
     """
     unread_messages = Message.unread.for_user(request.user)
     return render(
