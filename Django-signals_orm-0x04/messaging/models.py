@@ -7,15 +7,36 @@ class Message(models.Model):
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_messages")
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-    edited = models.BooleanField(default=False)   # ✅ Track if edited
-    edited_by = models.ForeignKey(                # ✅ Track who edited
+    edited = models.BooleanField(default=False)
+    edited_by = models.ForeignKey(
         User, null=True, blank=True,
         on_delete=models.SET_NULL,
         related_name="edited_messages"
     )
+    # ✅ New field for threaded conversations
+    parent_message = models.ForeignKey(
+        "self", null=True, blank=True,
+        on_delete=models.CASCADE,
+        related_name="replies"
+    )
 
     def __str__(self):
-        return f"From {self.sender.username} to {self.receiver.username}: {self.content[:20]}"
+        return f"{self.sender.username} → {self.receiver.username}: {self.content[:20]}"
+
+    def get_thread(self):
+        """
+        Recursively fetch all replies to this message in a threaded structure.
+        """
+        thread = []
+        for reply in self.replies.all().select_related("sender", "receiver").prefetch_related("replies"):
+            thread.append({
+                "id": reply.id,
+                "content": reply.content,
+                "sender": reply.sender.username,
+                "timestamp": reply.timestamp,
+                "children": reply.get_thread()  # recursion for nested replies
+            })
+        return thread
 
 
 class MessageHistory(models.Model):
@@ -24,7 +45,7 @@ class MessageHistory(models.Model):
     """
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name="history")
     old_content = models.TextField()
-    edited_by = models.ForeignKey(                # ✅ Who made this edit
+    edited_by = models.ForeignKey(
         User, null=True, blank=True,
         on_delete=models.SET_NULL,
         related_name="message_histories"
