@@ -59,6 +59,19 @@ def inbox(request):
     return render(request, "messaging/inbox.html", {"messages": user_messages})
 
 
+@login_required
+def unread_inbox(request):
+    """
+    Show only unread messages for the logged-in user.
+    """
+    unread_messages = Message.unread.for_user(request.user)
+    return render(
+        request,
+        "messaging/unread_inbox.html",
+        {"messages": unread_messages}
+    )
+
+
 def get_threaded_replies(message):
     """
     Recursive function to fetch all replies for a message.
