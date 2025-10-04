@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
+from django.views.decorators.cache import cache_page  # ✅ import cache_page
 from .models import Message
 
 
@@ -49,7 +50,6 @@ def inbox(request):
     Display inbox messages with threaded replies.
     Optimized with select_related and prefetch_related.
     """
-    # Fetch all messages for the logged-in user (both sent and received)
     user_messages = (
         Message.objects.filter(receiver=request.user)
         .select_related("sender", "receiver", "parent_message")
@@ -90,6 +90,7 @@ def get_threaded_replies(message):
 
 
 @login_required
+@cache_page(60)  # ✅ Cache this view for 60 seconds
 def view_conversation(request, message_id):
     """
     View a message and all its threaded replies.
