@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# kubctl-0x01 - Scale Django app and monitor Kubernetes resources
+
+set -e  # Exit on error
+
+DEPLOYMENT_NAME="django-messaging-app"
+NAMESPACE="default"
+REPLICAS=3
+SERVICE_NAME="messaging-app-service"
+SERVICE_PORT=8000
+
+echo "=== Kubernetes Scaling & Load Test Script ==="
+
+# 1. Scale the deployment
+echo "🚀 Scaling deployment '$DEPLOYMENT_NAME' to $REPLICAS replicas..."
+kubectl scale deployment "$DEPLOYMENT_NAME" --replicas=$REPLICAS
+
+# 2. Verify the pods are running
+echo "🔍 Checking pods status..."
+kubectl get pods
+
+# 3. Get the ClusterIP of the service for load testing
+SERVICE_IP=$(kubectl get svc $SERVICE_NAME -o jsonpath='{.spec.clusterIP}')
+echo "ℹ️  Service ClusterIP: $SERVICE_IP"
+
+# 4. Perform load testing using wrk (assuming wrk is installed)
+if command -v wrk >/dev/null 2>&1; then
+    echo "⚡ Running load test with wrk..."
+    echo "This will send 1000 requests with 10 threads over 30s"
+    wrk -t10 -c10 -d30s http://$SERVICE_IP:$SERVICE_PORT/
+else
+    echo "❌ wrk is not installed. Install it to perform load testing: https://github.com/wg/wrk"
+fi
+
+# 5. Monitor resource usage
+if kubectl top pods >/dev/null 2>&1; then
+    echo "📊 Monitoring resource usage of pods..."
+    kubectl top pods
+else
+    echo "⚠️ Metrics server not found. Install metrics-server to use 'kubectl top'."
+fi
+
+echo "🎉 Script completed!"
