@@ -3,9 +3,8 @@ kind: Ingress
 metadata:
   name: messaging-app-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: "nginx"
 spec:
-  ingressClassName: nginx
   rules:
     - host: messaging-app.local
       http:
@@ -14,6 +13,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: messaging-app-service
+                name: messaging-app-service  # Must match your ClusterIP service
                 port:
-                  number: 8000
+                  number: 8000              # Must match your service port
