@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-messaging-app
+  labels:
+    app: messaging-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: messaging-app
+  template:
+    metadata:
+      labels:
+        app: messaging-app
+    spec:
+      containers:
+      - name: django-app
+        image: your-dockerhub-username/messaging-app:latest  # Replace with your Docker image
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: messaging_app.settings
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        # If you have a database, you can add environment variables for DB here
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: messaging-app-service
+spec:
+  selector:
+    app: messaging-app
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 8000       # Internal service port
+      targetPort: 8000 # Port exposed by the container
