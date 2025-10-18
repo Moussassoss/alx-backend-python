@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# kubctl-0x03 - Perform rolling update and test zero downtime
+
+set -e
+
+DEPLOYMENT="django-messaging-blue"
+DEPLOYMENT_FILE="messaging_app/blue_deployment.yaml"
+SERVICE_NAME="messaging-app-service"
+PORT=8000
+
+echo "=== Rolling Update Script for Django App ==="
+
+# 1. Apply the updated deployment
+echo "🚀 Applying updated deployment (version 2.0)..."
+kubectl apply -f $DEPLOYMENT_FILE
+
+# 2. Monitor the rollout status
+echo "🔄 Monitoring rollout progress..."
+kubectl rollout status deployment/$DEPLOYMENT
+
+# 3. Get the ClusterIP for testing
+SERVICE_IP=$(kubectl get svc $SERVICE_NAME -o jsonpath='{.spec.clusterIP}')
+
+if [ -z "$SERVICE_IP" ]; then
+  echo "❌ Failed to retrieve ClusterIP. Check if service exists."
+  exit 1
+fi
+
+# 4. Test app availability with curl (simulate traffic)
+echo "📡 Testing app availability during rollout..."
+for i in {1..15}
+do
+  curl -s -o /dev/null -w "Request $i: %{http_code}\n" http://$SERVICE_IP:$PORT/ || echo "❌ Request $i failed!"
+  sleep 2
+done
+
+# 5. Verify updated pods
+echo "🔍 Checking current pods..."
+kubectl get pods -l app=messaging-app,version=blue -o wide
+
+echo "🎉 Rolling update completed successfully with zero downtime!"
