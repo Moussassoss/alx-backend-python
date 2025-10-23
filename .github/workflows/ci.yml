@@ -1,4 +1,4 @@
-name: Django CI
+name: Django CI (SQLite)
 
 on:
   push:
@@ -7,29 +7,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
-    services:
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: test_db
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_pass
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-
-    env:
-      DATABASE_NAME: test_db
-      DATABASE_USER: test_user
-      DATABASE_PASSWORD: test_pass
-      DATABASE_HOST: 127.0.0.1
-      DATABASE_PORT: 3306
 
     steps:
       - name: Checkout code
@@ -46,14 +23,6 @@ jobs:
           source venv/bin/activate
           pip3 install --upgrade pip
           pip3 install -r messaging_app/requirements.txt
-
-      - name: Wait for MySQL
-        run: |
-          sudo apt-get install -y netcat
-          until nc -z 127.0.0.1 3306; do
-            echo "Waiting for MySQL..."
-            sleep 5
-          done
 
       - name: Run Django migrations
         run: |
