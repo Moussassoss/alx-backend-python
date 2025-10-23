@@ -1,0 +1,57 @@
+pipeline {
+    agent any
+
+    environment {
+        // Use the ShiningPanda virtual environment
+        PYTHON = 'python3'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    credentialsId: 'github-creds',
+                    url: 'https://github.com/<your-username>/alx-backend-python.git'
+            }
+        }
+
+        stage('Setup Python Environment') {
+            steps {
+                // Use ShiningPanda to create a clean virtual environment
+                sh 'python3 -m venv venv'
+                sh '. venv/bin/activate && pip install --upgrade pip'
+                sh '. venv/bin/activate && pip install -r messaging_app/requirements.txt'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                // Run pytest and generate HTML report
+                sh '''
+                . venv/bin/activate
+                pytest messaging_app/tests --junitxml=report.xml --html=report.html --self-contained-html
+                '''
+            }
+        }
+
+        stage('Archive Test Report') {
+            steps {
+                // Archive the pytest reports in Jenkins
+                junit 'report.xml'
+                archiveArtifacts artifacts: 'report.html', fingerprint: true
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline completed.'
+        }
+        success {
+            echo 'All tests passed successfully!'
+        }
+        failure {
+            echo 'Some tests failed. Please check the report.'
+        }
+    }
+}
